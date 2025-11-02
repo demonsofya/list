@@ -25,6 +25,16 @@ int main()
     ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER INSERT");
 
     DeleteElement(&list_1, 2, 0);
+    InsertAfter(&list_1, 3, 70, 0);
+    InsertBefore(&list_1, 1, 80, 0);
+    InsertAfter(&list_1, 3, 90, 0);
+    InsertBefore(&list_1, 1, 100, 0);
+    InsertAfter(&list_1, 3, 110, 0);
+    InsertBefore(&list_1, 1, 120, 0);
+    InsertAfter(&list_1, 3, 130, 0);
+    InsertBefore(&list_1, 1, 140, 0);
+    list_1.prev[3] = 6;
+    list_1.next[1] = 222;
 
     ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER DELETE");
 
@@ -39,9 +49,9 @@ int main()
 
     ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER INSERT AFTER TAIL AND BEFORE HEAD");
 
-    for (int i = GetHeadPosition(&list_1); i != 0; i = list_1.next[i])
-        printf("[%d] ", list_1.data[i]);
-    printf("\n\n");
+    //for (int i = GetHeadPosition(&list_1); i != 0; i = list_1.next[i])
+    //    printf("[%d] ", list_1.data[i]);
+    //printf("\n\n");
 
     return 0;
 }

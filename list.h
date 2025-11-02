@@ -39,6 +39,10 @@ const int POISON = 1984;
 
 const int CANARY = 451;
 
+const int DUMMY_ELEMENT_POS = 0;
+
+const int FREE_PREV_ELEMENT_POS = -1;
+
 struct list_t {
     int *data;
     int *next;
@@ -88,6 +92,8 @@ void ListDump(list_t *list_struct, const char *file_name, const char *function_n
               int line_number, const char *calling_reason_string);
 void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char *function_name,
                          int line_number, const char *calling_reason_string);
+void ListDumpPrintArrayErrors(list_t *list_struct, int error);
+
 void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter);
 
 int GetFreeElementPosition(list_t *list_struct);
@@ -96,5 +102,11 @@ int GetTailPosition(list_t *list_struct);
 int GetNextPosition(list_t *list_struct, int curr_pos);
 int GetPrevPosition(list_t *list_struct, int curr_pos);
 
+void ChangeNodeName(int node_num, char *node);
+void ChangeDotFileName(int file_num, char *file_name);
+
+void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr);
+void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr);
+void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr);
 
 #endif // LIST_H_INCLUDED
