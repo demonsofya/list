@@ -52,6 +52,13 @@ struct list_t {
     int free;
 };
 
+struct node_args_t {
+    char        *label;
+    const char  *fill_color;
+    const char  *color;
+    int         rank_num;
+};
+
 enum ListErrors {
 
     NO_LIST_ERROR       = 0,
@@ -92,7 +99,7 @@ void ListDump(list_t *list_struct, const char *file_name, const char *function_n
               int line_number, const char *calling_reason_string);
 void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char *function_name,
                          int line_number, const char *calling_reason_string);
-void ListDumpPrintArrayErrors(list_t *list_struct, int error);
+void ListDumpPrintListArraysErrors(list_t *list_struct, int error);
 
 void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter);
 
@@ -108,5 +115,8 @@ void ChangeDotFileName(int file_num, char *file_name);
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr);
 void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr);
 void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr);
+void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second_node,
+                  const char* color, int pen_width, const char *dir_type);
+void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name);
 
 #endif // LIST_H_INCLUDED

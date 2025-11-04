@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "list.h"
+
+//#include "TXlib.h"
 
 //=============================================================================
 
@@ -11,6 +14,8 @@
 FILE *LOGFILE = OpenLogFile();
 
 #define DEFAULT_NODE_NAME "node_a"
+#define DEFAULT_DOT_TXT_FILE_NAME "DotFileNuma.txt"
+#define DEFAULT_DOT_PNG_FILE_NAME "DotFileNuma.png"
 
 //=============================================================================
 
@@ -137,14 +142,14 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
     else
         fprintf(SEREGA, "Tail position is %d\n\n", list_struct->prev[0]);
 
-    ListDumpPrintArrayErrors(list_struct, error);
+    ListDumpPrintListArraysErrors(list_struct, error);
 
     fprintf(SEREGA, "</pre>\n");
 }
 
 //-----------------------------------------------------------------------------
 
-void ListDumpPrintArrayErrors(list_t *list_struct, int error) {
+void ListDumpPrintListArraysErrors(list_t *list_struct, int error) {
 
     if (list_struct == NULL)
         return;
@@ -198,8 +203,8 @@ void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter) {
     if (list_struct == NULL || dot_files_counter == NULL)
         return;
 
-    char DotFileName[] = "DotFileNuma.txt";
-    char DotFilePngName[] = "DotFileNuma.png";
+    char DotFileName[] = DEFAULT_DOT_TXT_FILE_NAME;
+    char DotFilePngName[] = DEFAULT_DOT_PNG_FILE_NAME;
 
     ChangeDotFileName(*dot_files_counter, DotFilePngName);
     ChangeDotFileName(*dot_files_counter, DotFileName);
@@ -302,7 +307,10 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
         ChangeNodeName(next_pos, next_node);
 
         if (list_struct->next[i] < 0 || list_struct->next[i] >= list_struct->list_size) {
-            fprintf(dot_file_ptr, "%s -> %d [color = \"#CC0000\", penwidth = 4];\n", curr_node, next_pos);
+            char curr_pos[10] = "";
+            snprintf(curr_pos, 10, "%d", next_pos);
+            DrawCurrEdge(dot_file_ptr, curr_node, curr_pos, "CC0000", 4, "forward");
+            //fprintf(dot_file_ptr, "%s -> %d [color = \"#CC0000\", penwidth = 4];\n", curr_node, next_pos);
             continue;
         }
 
@@ -310,11 +318,14 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
         ChangeNodeName(prev_pos, prev_node);
 
         if (prev_pos == i && i != 0 && next_pos != 0)
-            fprintf(dot_file_ptr, "%s -> %s [color = \"#6666FF\", penwidth = 1, dir = both];\n", curr_node, next_node);
+            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "6666FF", 1, "both");
+            //fprintf(dot_file_ptr, "%s -> %s [color = \"#6666FF\", penwidth = 1, dir = both];\n", curr_node, next_node);
 
         else if (prev_pos >= 0 && prev_pos < list_struct->list_size && next_pos > 0 && next_pos < list_struct->list_size) {
-            fprintf(dot_file_ptr, "%s -> %s [color = \"#990000\", penwidth = 2];\n", next_node, prev_node);
-            fprintf(dot_file_ptr, "%s -> %s [color = \"#990000\", penwidth = 2];\n", curr_node, next_node);
+            DrawCurrEdge(dot_file_ptr, next_node, prev_node, "990000", 2, "forward");
+            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "990000", 2, "forward");
+            //fprintf(dot_file_ptr, "%s -> %s [color = \"#990000\", penwidth = 2, dir = forward];\n", next_node, prev_node);
+            //fprintf(dot_file_ptr, "%s -> %s [color = \"#990000\", penwidth = 2, dir = forward];\n", curr_node, next_node);
 
         }
     }
@@ -342,6 +353,17 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
     */
 }
 
+void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second_node,
+                  const char* color, int pen_width, const char *dir_type) {
+
+    if (first_node == NULL || second_node == NULL || color == NULL || dir_type == NULL)
+        return;
+
+    fprintf(dot_file_ptr, "%s -> %s [color = \"#%s\", penwidth = %d, dir = %s];\n",
+                           first_node, second_node, color, pen_width, dir_type);
+
+}
+
 //-----------------------------------------------------------------------------
 
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
@@ -351,24 +373,58 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
 
     char curr_node[] = DEFAULT_NODE_NAME;
 
-    fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index = %d | { HEAD = %d | TAIL = %d }"
-                           "\", style = \"filled\", fillcolor = \"#baacc7\", color = \"#876f9e\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0], 0);
+    node_args_t curr_node_args = {};
+    curr_node_args.label = (char *) calloc(100, sizeof(100));
+    if (curr_node_args.label == NULL)
+        return;
+    snprintf(curr_node_args.label, 100, "data = %d | index = %d | { HEAD = %d | TAIL = %d }",
+                         list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0]);
+
+    curr_node_args.fill_color = "baacc7";
+    curr_node_args.color = "876f9e";
+    curr_node_args.rank_num = 0;
+    //curr_node_args.node_name = DEFAULT_NODE_NAME;
+
+    DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+    //fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index = %d | { HEAD = %d | TAIL = %d }"
+    //                       "\", style = \"filled\", fillcolor = \"#baacc7\", color = \"#876f9e\", rank = %d, fontcolor = black]\n",
+    //                               curr_node, list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0], 0);
 
     for (int i = 1; i < list_struct->list_size; i++) {
          ChangeNodeName(i, curr_node);
+         curr_node_args.rank_num = i;
 
-         if (i == list_struct->free)
-            fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"FREE | data = %d | index = %d | { next = %d | prev = %d }"
-                                  "\", style = \"filled\", fillcolor = \"#ccccff\", color = \"#9999ff\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+         curr_node_args.fill_color = "99CCFF";
+         curr_node_args.color = "0066CC";
+
+         snprintf(curr_node_args.label, 100, "data = %d | index =  %d | { next = %d | prev = %d }",
+                                             list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+
+         if (i == list_struct->free) {
+            snprintf(curr_node_args.label, 100, "FREE | data = %d | index = %d | { next = %d | prev = %d }",
+                                                list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+            curr_node_args.fill_color = "ccccff";
+            curr_node_args.color = "9999ff";
+
+            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+            //fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"FREE | data = %d | index = %d | { next = %d | prev = %d }"
+            //                      "\", style = \"filled\", fillcolor = \"#ccccff\", color = \"#9999ff\", rank = %d, fontcolor = black]\n",
+            //                       curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+        }
 
          else if (i == list_struct->next[0]) {
-            fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index =  %d | { next = %d | prev = %d }"
-                                  "\", style = \"filled\", fillcolor = \"#99CCFF\", color = \"#0066CC\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+            //snprintf(curr_node_args.label, 100, "data = %d | index =  %d | { next = %d | prev = %d }",
+            //                                    list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+            //curr_node_args.fill_color = "99CCFF";
+            //curr_node_args.color = "0066CC";
+
+            //fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index =  %d | { next = %d | prev = %d }"
+            //                      "\", style = \"filled\", fillcolor = \"#99CCFF\", color = \"#0066CC\", rank = %d, fontcolor = black]\n",
+            //                       curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
             fprintf(dot_file_ptr, "head_node [shape = \"Mrecord\", label = \"HEAD"
-                                  "\", style = \"filled\", fillcolor = \"#e3cced\", color = \"#cfa6e0\", rank = \"same\", fontcolor = black]\n", i + 1);
+                                  "\", style = \"filled\", fillcolor = \"#e3cced\", color = \"#cfa6e0\", rank = \"same\", fontcolor = black]\n",
+                                  i + 1);
 
             fprintf(dot_file_ptr, "head_node -> %s [color = \"#cfa6e0\"];\n", curr_node);
 
@@ -376,9 +432,15 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
          }
 
          else if (i == list_struct->prev[0]) {
-            fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index =  %d | { next = %d | prev = %d }"
-                                  "\", style = \"filled\", fillcolor = \"#99CCFF\", color = \"#0066CC\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+            //snprintf(curr_node_args.label, 100, "data = %d | index =  %d | { next = %d | prev = %d }",
+            //                                    list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+            //curr_node_args.fill_color = "99CCFF";
+            //curr_node_args.color = "0066CC";
+
+            //fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index =  %d | { next = %d | prev = %d }"
+            //                      "\", style = \"filled\", fillcolor = \"#99CCFF\", color = \"#0066CC\", rank = %d, fontcolor = black]\n",
+            //                       curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
             fprintf(dot_file_ptr, "tail_node [shape = \"Mrecord\", label = \"TAIL"
                                   "\", style = \"filled\", fillcolor = \"#e3cced\", color = \"#cfa6e0\", rank = \"same\", fontcolor = black]\n");
 
@@ -387,16 +449,34 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
 
          }
 
-         else if (list_struct->prev[i] == -1)
-            fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d [POISON] | index =  %d | { next = %d | prev = %d }"
-                                   "\", style = \"filled\", fillcolor = \"#CCFF99\", color = \"#66CC00\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+         else if (list_struct->prev[i] == -1) {
+            snprintf(curr_node_args.label, 100, "data = %d [POISON] | index =  %d | { next = %d | prev = %d }",
+                                                list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+            curr_node_args.fill_color = "CCFF99";
+            curr_node_args.color = "66CC00";
+            //fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d [POISON] | index =  %d | { next = %d | prev = %d }"
+            //                       "\", style = \"filled\", fillcolor = \"#CCFF99\", color = \"#66CC00\", rank = %d, fontcolor = black]\n",
+            //                       curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+
+        }
 
          else
-            fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"data = %d | index =  %d | { next = %d | prev = %d }"
-                                  "\", style = \"filled\", fillcolor = \"#99CCFF\", color = \"#0066CC\", rank = %d, fontcolor = black]\n",
-                                   curr_node, list_struct->data[i], i, list_struct->next[i], list_struct->prev[i], i);
+            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+
     }
+}
+
+void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name) {
+
+    if (dot_file_ptr == NULL || curr_node_args == NULL || node_name == NULL)
+        return;
+
+    fprintf(dot_file_ptr, "%s [shape = \"Mrecord\", label = \"%s\", style = \"filled\", "
+                          "fillcolor = \"#%s\", color = \"#%s\", rank = %d, fontcolor = black]\n",
+                          node_name, curr_node_args->label, curr_node_args->fill_color,
+                          curr_node_args->color, curr_node_args->rank_num);
+
 }
 
 
@@ -404,7 +484,7 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
 
 void ChangeNodeName(int node_num, char *node) {
 
-    if (node == NULL)
+    if (node == NULL || strlen(node) <= 5)
         return;
 
     node[5] = 'a' + node_num;
