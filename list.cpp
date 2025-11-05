@@ -43,8 +43,6 @@ void ListDtor(list_t *list_struct) {
     free(list_struct->data);
     free(list_struct->next);
     free(list_struct->prev);
-
-    free(list_struct);
 }
 
 //=============================================================================

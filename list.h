@@ -109,7 +109,7 @@ int GetTailPosition(list_t *list_struct);
 int GetNextPosition(list_t *list_struct, int curr_pos);
 int GetPrevPosition(list_t *list_struct, int curr_pos);
 
-void ChangeNodeName(int node_num, char *node);
+void GetNodeName(int node_num, char *node);
 void ChangeDotFileName(int file_num, char *file_name);
 
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr);
@@ -118,5 +118,7 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr);
 void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second_node,
                   const char* color, int pen_width, const char *dir_type);
 void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name);
+
+char *CreateDotFileName(const char *file_type);
 
 #endif // LIST_H_INCLUDED
