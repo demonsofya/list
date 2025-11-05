@@ -48,10 +48,10 @@ bool DeleteElement(list_t *list_struct, ListNode_t *curr_node);
 
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr);
 void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name);
-void ChangeDotFileName(int file_num, char *file_name);
-void ChangeNodeName(int node_num, char *node);
+char *CreateDotFileName(const char *file_type);
+char *GetNodeName(int node_num);
 
-void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter);
+void CreateDumpGraphFile(list_t *list_struct);
 void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char *function_name,
                          int line_number, const char *calling_reason_string);
 void ListDump(list_t *list_struct, const char *file_name, const char *function_name,

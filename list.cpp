@@ -15,7 +15,10 @@ list_t ListCtor(int data_size) {
     list_struct.next = (int *) calloc(sizeof(int), data_size);
     list_struct.prev = (int *) calloc(sizeof(int), data_size);
 
-    for (int i = 1; i < data_size; i++) {
+    // TODO: func
+    list_struct.free = 1;
+
+    for (int i = list_struct.free; i < data_size; i++) {
         list_struct.next[i] = i + 1;
         list_struct.prev[i] = FREE_PREV_ELEMENT_POS;
         list_struct.data[i] = POISON;
@@ -26,7 +29,6 @@ list_t ListCtor(int data_size) {
     list_struct.next[data_size - 1] = 0;
 
     list_struct.list_size = data_size;
-    list_struct.free = 1;
 
     return list_struct;
 }
@@ -84,6 +86,7 @@ int GetFreeElementPosition(list_t *list_struct) {
 int GetHeadPosition(list_t *list_struct) {
 
     assert(list_struct);
+    assert(list_struct->next);
 
     return list_struct->next[DUMMY_ELEMENT_POS];
 }
@@ -91,6 +94,7 @@ int GetHeadPosition(list_t *list_struct) {
 int GetTailPosition(list_t *list_struct) {
 
     assert(list_struct);
+//sddssd
 
     return list_struct->prev[DUMMY_ELEMENT_POS];
 }
@@ -98,6 +102,7 @@ int GetTailPosition(list_t *list_struct) {
 int GetNextPosition(list_t *list_struct, int curr_pos) {
 
     assert(list_struct);
+//dsdsds
 
     return list_struct->next[curr_pos];
 }
@@ -105,6 +110,7 @@ int GetNextPosition(list_t *list_struct, int curr_pos) {
 int GetPrevPosition(list_t *list_struct, int curr_pos) {
 
     assert(list_struct);
+  //  dsds
 
     return list_struct->prev[curr_pos];
 }
@@ -232,3 +238,36 @@ int DeleteElement(list_t *list_struct, int curr_pos, bool *if_element_deleted) {
 
 //=============================================================================
 
+int SortList(list_t *list_struct) {
+
+    Return_If_Error(list_struct);
+
+    int *new_data = (int *) calloc(list_struct->list_size, sizeof(int));
+
+    for (int i = 1; i < list_struct->list_size; i++) {
+
+        if (list_struct->prev[i] != -1) {
+            list_struct->next[i] = i + 1;
+            list_struct->prev[i] = i - 1;
+
+            new_data[i] = list_struct->data[i];
+
+        } else
+            new_data[i] = POISON;
+    }
+
+    new_data[0] = CANARY;
+
+    list_struct->next[list_struct->free - 1] = DUMMY_ELEMENT_POS;
+    list_struct->next[DUMMY_ELEMENT_POS] = 1;
+    list_struct->prev[DUMMY_ELEMENT_POS] = list_struct->free - 1;
+
+    free(list_struct->data);
+
+    list_struct->data = new_data;
+
+    Return_Error(list_struct);
+}
+
+
+//=============================================================================

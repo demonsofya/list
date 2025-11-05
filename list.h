@@ -101,7 +101,7 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
                          int line_number, const char *calling_reason_string);
 void ListDumpPrintListArraysErrors(list_t *list_struct, int error);
 
-void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter);
+void CreateDumpGraphFile(list_t *list_struct);
 
 int GetFreeElementPosition(list_t *list_struct);
 int GetHeadPosition(list_t *list_struct);
@@ -109,8 +109,14 @@ int GetTailPosition(list_t *list_struct);
 int GetNextPosition(list_t *list_struct, int curr_pos);
 int GetPrevPosition(list_t *list_struct, int curr_pos);
 
-void GetNodeName(int node_num, char *node);
+char *GetNodeName(int node_num);
 void ChangeDotFileName(int file_num, char *file_name);
+
+node_args_t *NodeArgsCtor(const char *fill_color, const char *color, int rank_num);
+
+void PrintDotFileHeader(FILE *dot_file_ptr, char *DotFilePngName);
+void PrintDotFileEnd(FILE *dot_file_ptr);
+void CreateImageFromDotFile(char *DotFileName, char *DotFilePngName);
 
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr);
 void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr);
@@ -120,5 +126,8 @@ void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second
 void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name);
 
 char *CreateDotFileName(const char *file_type);
+
+int ChangeListElements(list_t *list_struct, int first_pos, int second_pos);
+int SortList(list_t *list_struct);
 
 #endif // LIST_H_INCLUDED

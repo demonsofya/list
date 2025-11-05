@@ -6,7 +6,7 @@
 
 #include "list.h"
 
-#include "TXlib.h"
+//#include "TXlib.h"
 
 //=============================================================================
 
@@ -17,19 +17,23 @@ FILE *LOGFILE = OpenLogFile();
 #define DEFAULT_DOT_TXT_FILE_NAME "DotFileNum_0.txt"
 #define DEFAULT_DOT_PNG_FILE_NAME "DotFileNum_0.png"
 
-const int MAX_DOT_NAME_SIZE = 10;
-const int MAX_DOt_FILE_NAME_SIZE = 100;
+const int MAX_DOT_NAME_SIZE      = 100;
+const int MAX_DOT_FILE_NAME_SIZE = 100;
+const int MAX_LABEL_STRING_SIZE  = 100;
+const int MAX_DOT_COMMAND_SIZE   = 100;
 
 //=============================================================================
 
 
 FILE* OpenLogFile() {
 
-    FILE *file_ptr = fopen("ListLogFile.html", "w");
+    FILE *file_ptr = fopen("ListLogFile.html", "w"); // TODO: ¬€Õ≈—»  ¿   ŒÕ—“¿Õ“” ¡Àﬂ“‹
     atexit(CloseLogFile);
 
     return file_ptr;
 }
+
+//-----------------------------------------------------------------------------
 
 void CloseLogFile() {
 
@@ -69,21 +73,22 @@ int ListVerify(list_t *list_struct) {
 
     if (list_struct->next != NULL && list_struct->prev != NULL) {
         for (int i = 1; i < list_struct->list_size; i++)
-            if (list_struct->prev[list_struct->next[i]] != i && list_struct->prev[i] != -1) {
-                error |= PREV_NEXT_ERROR;
-                break;
-            }
+            if (list_struct->next[i] < list_struct->list_size && list_struct->next[i] >= 0)
+                if (list_struct->prev[list_struct->next[i]] != i && list_struct->prev[i] != -1) {
+                    error |= PREV_NEXT_ERROR;
+                    break;
+                }
 
         int counter = 0;
         for (int i = GetHeadPosition(list_struct); i > 0 && i < list_struct->list_size
-                                                         && counter <= list_struct->list_size; i = list_struct->next[i])
+                     && counter <= list_struct->list_size; i = list_struct->next[i])
             counter++;
         if (counter > list_struct->list_size)
             error |= NEXT_LIST_ERROR;
 
         counter = 0;
         for (int i = GetTailPosition(list_struct); i > 0 && i < list_struct->list_size
-                                                         && counter <= list_struct->list_size; i = list_struct->prev[i])
+                     && counter <= list_struct->list_size; i = list_struct->prev[i])
             counter++;
         if (counter > list_struct->list_size)
             error |= PREV_LIST_ERROR;
@@ -99,11 +104,9 @@ int ListVerify(list_t *list_struct) {
 void ListDump(list_t *list_struct, const char *file_name, const char *function_name,
               int line_number, const char *calling_reason_string) {
 
-    static int dot_files_counter = 0;
-
     ListDumpPrintErrors(list_struct, file_name, function_name, line_number, calling_reason_string);
 
-    CreateDumpGraphFile(list_struct, &dot_files_counter);
+    CreateDumpGraphFile(list_struct);
 }
 
 //=============================================================================
@@ -113,10 +116,12 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
 
     int error = ListVerify(list_struct);
 
-    fprintf(SEREGA, "<h2><font color=\"#CC0000\"><p align=\"center\">===========DUMP===========</p></font></h2>"
-                    "\n<h3><p align=\"center\">%s</p></h3>\n\n", calling_reason_string);
+    fprintf(SEREGA, "<h2><font color=\"#CC0000\"><p align=\"center\">===========DUMP==========="
+                    "</p></font></h2>\n<h3><p align=\"center\">%s</p></h3>\n\n",
+                    calling_reason_string);
 
-    fprintf(SEREGA, "<h4>ListDump() from %s at %s:%d:</h4>\n<pre>", file_name, function_name, line_number);
+    fprintf(SEREGA, "<h4>ListDump() from %s at %s:%d:</h4>\n<pre>", file_name, function_name,
+                                                                    line_number);
 
     if (list_struct == NULL || error == PTR_LIST_ERROR) {
         fprintf(SEREGA, "ERROR: list pointer error. List pointer is [%p]\n\n", list_struct);
@@ -201,40 +206,71 @@ void ListDumpPrintListArraysErrors(list_t *list_struct, int error) {
 
 //=============================================================================
 
-void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter) {
+void CreateDumpGraphFile(list_t *list_struct) {
 
-    if (list_struct == NULL || dot_files_counter == NULL)
+    if (list_struct == NULL)
         return;
 
     char *DotFileName = CreateDotFileName("txt");
     char *DotFilePngName = CreateDotFileName("png");
 
-    //ChangeDotFileName(*dot_files_counter, DotFilePngName);
-    //ChangeDotFileName(*dot_files_counter, DotFileName);
-    (*dot_files_counter)++;
+    if (DotFileName == NULL || DotFilePngName == NULL)
+        return;    // TODO: ’”À» Õ≈ –¿¡Œ“¿≈“ Õ»’”ﬂ???
 
     FILE *dot_file_ptr = fopen(DotFileName, "w");
+
+    if (dot_file_ptr == NULL)
+        return;
+
+    PrintDotFileHeader(dot_file_ptr, DotFilePngName);
+    DrawDotNodes(list_struct, dot_file_ptr);
+    DrawDotEdges(list_struct, dot_file_ptr);
+    PrintDotFileEnd(dot_file_ptr);
+
+    fclose(dot_file_ptr);
+
+    CreateImageFromDotFile(DotFileName, DotFilePngName);
+}
+
+//-----------------------------------------------------------------------------
+
+void PrintDotFileHeader(FILE *dot_file_ptr, char *DotFilePngName) {
+
+    // TODO::::::::: ASSERT
+
+    if (dot_file_ptr == NULL || DotFilePngName == NULL)
+        return;
 
     fprintf(SEREGA, "<img src=\"%s\" />\n", DotFilePngName);
 
     fprintf(dot_file_ptr, "digraph {\nrankdir=\"LR\";\n");
     fprintf(dot_file_ptr, "node [shape = \"doubleoctagon\", style = \"filled\", fillcolor = \"#FF6666\""
                           ", color = \"#CC0000\", fontcolor = white, fontsize=20, margin=0.1];\n");
+}
 
-    DrawDotNodes(list_struct, dot_file_ptr);
-    DrawDotEdges(list_struct, dot_file_ptr);
+//-----------------------------------------------------------------------------
+
+void PrintDotFileEnd(FILE *dot_file_ptr) {
+
+    if (dot_file_ptr == NULL)
+        return;
 
     fprintf(dot_file_ptr, "}");
+}
 
-    fclose(dot_file_ptr);
+//-----------------------------------------------------------------------------
 
-    char command[100] = "";
-    sprintf(command, "dot %s -T png > %s", DotFileName, DotFilePngName);
+void CreateImageFromDotFile(char *DotFileName, char *DotFilePngName) {
 
-ON_DEBUG(printf("Result string is %s\n", command));
+    if (DotFileName == NULL || DotFilePngName == NULL)
+        return;
+
+    char command[MAX_DOT_COMMAND_SIZE] = "";
+    snprintf(command, MAX_DOT_COMMAND_SIZE, "dot %s -T png > %s", DotFileName, DotFilePngName);
 
     system(command);
 
+    ON_DEBUG(fprintf(stderr, "%s\n", command));
 }
 
 //-----------------------------------------------------------------------------
@@ -244,19 +280,20 @@ void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr) {
     if (list_struct == NULL || dot_file_ptr == NULL)
         return;
 
-    char curr_node[MAX_DOT_NAME_SIZE] = DEFAULT_NODE_NAME;
+    char *curr_node = NULL;
 
     fprintf(dot_file_ptr, "{\n edge [color = \"#f5f5dc\", dir=none];\n");
     for (int i = 0; i < list_struct->list_size - 1; i++) {
-        GetNodeName(i, curr_node);
+        curr_node = GetNodeName(i);
         fprintf(dot_file_ptr, "\"%s\" -> ", curr_node);
     }
-    GetNodeName(list_struct->list_size - 1, curr_node);
+
+    curr_node = GetNodeName(list_struct->list_size - 1);
     fprintf(dot_file_ptr, "\"%s\" [weight = 1000000];\n}\n", curr_node);
 
     fprintf(dot_file_ptr, "{\n edge [color = \"#4C9900\"];\n");
     for (int i = list_struct->free; i > 0 && i < list_struct->list_size; i = list_struct->next[i]) {
-        GetNodeName(i, curr_node);
+        curr_node = GetNodeName(i);
 
         if (list_struct->next[i] <= 0 || list_struct->next[i] >= list_struct->list_size)
             fprintf(dot_file_ptr, "\"%s\";\n}\n", curr_node);
@@ -275,38 +312,41 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
     if (list_struct == NULL || dot_file_ptr == NULL)
         return;
 
-    char curr_node[MAX_DOT_NAME_SIZE] = DEFAULT_NODE_NAME;
-    char prev_node[MAX_DOT_NAME_SIZE] = DEFAULT_NODE_NAME;
-    char next_node[MAX_DOT_NAME_SIZE] = DEFAULT_NODE_NAME;
-
     for (int i = 1; i < list_struct->list_size; i++) {
 
         int next_pos = list_struct->next[i];
 
-        GetNodeName(i, curr_node);
-        GetNodeName(next_pos, next_node);
+        char *curr_node = GetNodeName(i);
+        char *next_node = GetNodeName(next_pos);
+        if (curr_node == NULL || next_node == NULL)
+            return;
 
         if (list_struct->next[i] < 0 || list_struct->next[i] >= list_struct->list_size) {
-            char curr_pos[10] = "";
-            snprintf(curr_pos, 10, "%d", next_pos);
+            char curr_pos[MAX_DOT_NAME_SIZE] = "";
+            snprintf(curr_pos, MAX_DOT_NAME_SIZE, "%d", next_pos);
             DrawCurrEdge(dot_file_ptr, curr_node, curr_pos, "CC0000", 4, "forward");
 
             continue;
         }
 
         int prev_pos = list_struct->prev[next_pos];
-        GetNodeName(prev_pos, prev_node);
+        char *prev_node = GetNodeName(prev_pos);
+        if (prev_node == NULL)
+            return;
 
         if (prev_pos == i && i != 0 && next_pos != 0)
             DrawCurrEdge(dot_file_ptr, curr_node, next_node, "6666FF", 1, "both");
 
-        else if (prev_pos >= 0 && prev_pos < list_struct->list_size && next_pos > 0 && next_pos < list_struct->list_size) {
+        else if (prev_pos >= 0 && prev_pos < list_struct->list_size && next_pos > 0
+                               && next_pos < list_struct->list_size) {
             DrawCurrEdge(dot_file_ptr, next_node, prev_node, "990000", 2, "forward");
-            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "990000", 2, "forward");
+            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "990000", 2, "forward");      // TODO: ÷¬≈“ ’”… «Õ¿≈“  ¿ Œ…
 
         }
     }
 }
+
+//-----------------------------------------------------------------------------
 
 void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second_node,
                   const char* color, int pen_width, const char *dir_type) {
@@ -319,6 +359,27 @@ void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second
 
 }
 
+
+//=============================================================================
+
+node_args_t *NodeArgsCtor(const char *fill_color, const char *color, int rank_num) {
+
+    if (fill_color == NULL || color == NULL)
+        return NULL;
+
+    node_args_t *curr_node_args = (node_args_t *) calloc(1, sizeof(node_args_t));
+    if (curr_node_args == NULL)
+        return NULL;
+
+    curr_node_args->fill_color = fill_color;
+    curr_node_args->color = color;
+    curr_node_args->rank_num = rank_num;
+
+    curr_node_args->label = (char *) calloc(MAX_LABEL_STRING_SIZE, sizeof(char));
+
+    return curr_node_args;
+};
+
 //-----------------------------------------------------------------------------
 
 void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
@@ -326,81 +387,77 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
     if (list_struct == NULL || dot_file_ptr == NULL)
         return;
 
-    char curr_node[MAX_DOT_NAME_SIZE] = DEFAULT_NODE_NAME;
+    char *curr_node = GetNodeName(0);
 
-    node_args_t curr_node_args = {};
-    curr_node_args.label = (char *) calloc(100, sizeof(100));
-    if (curr_node_args.label == NULL)
+    node_args_t *curr_node_args = NodeArgsCtor("baacc7", "876f9e", 0);
+    if (curr_node_args == NULL)
         return;
-    snprintf(curr_node_args.label, 100, "data = %d | index = %d | { HEAD = %d | TAIL = %d }",
-                         list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0]);
 
-    curr_node_args.fill_color = "baacc7";
-    curr_node_args.color = "876f9e";
-    curr_node_args.rank_num = 0;
+    snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE, "data = %d | index = %d"
+                                                          "| { HEAD = %d | TAIL = %d }",
+                                   list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0]); // TODO: const
 
-    DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+    DrawCurrNode(dot_file_ptr, curr_node_args, curr_node);
 
     for (int i = 1; i < list_struct->list_size; i++) {
-         GetNodeName(i, curr_node);
-         curr_node_args.rank_num = i;
+         curr_node = GetNodeName(i);
 
-         curr_node_args.fill_color = "99CCFF";
-         curr_node_args.color = "0066CC";
+         curr_node_args = NodeArgsCtor("99CCFF", "0066CC", i); // TODO: SetNodeProperties
 
-         snprintf(curr_node_args.label, 100, "data = %d | index =  %d | { next = %d | prev = %d }",
-                                             list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
+         snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE,
+                                        "data = %d | index =  %d | { next = %d | prev = %d }",
+                                        list_struct->data[i], i, list_struct->next[i],
+                                        list_struct->prev[i]);
 
          if (i == list_struct->free) {
-            snprintf(curr_node_args.label, 100, "FREE | data = %d | index = %d | { next = %d | prev = %d }",
-                                                list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
-            curr_node_args.fill_color = "ccccff";
-            curr_node_args.color = "9999ff";
+            snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE,
+                                           "FREE | data = %d | index = %d | { next = %d | prev = %d }",
+                                           list_struct->data[i], i, list_struct->next[i],
+                                           list_struct->prev[i]);
 
-            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+            curr_node_args->fill_color = "ccccff";
+            curr_node_args->color = "9999ff";
+
+         }
+
+
+        else if (list_struct->prev[i] == FREE_PREV_ELEMENT_POS) {
+            snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE,
+                                           "data = %d [POISON] | index =  %d | { next = %d | prev = %d }",
+                                           list_struct->data[i], i, list_struct->next[i],
+                                           list_struct->prev[i]);
+
+            curr_node_args->fill_color = "CCFF99";
+            curr_node_args->color = "66CC00";
 
         }
 
-         else if (i == list_struct->next[0]) {
-            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
+        DrawCurrNode(dot_file_ptr, curr_node_args, curr_node);
 
+         if (i == list_struct->next[0]) {
             fprintf(dot_file_ptr, "head_node [shape = \"Mrecord\", label = \"HEAD"
-                                  "\", style = \"filled\", fillcolor = \"#e3cced\", color = \"#cfa6e0\", "
-                                  "rank = \"same\", fontcolor = black]\n",
-                                  i + 1);
+                                  "\", style = \"filled\", fillcolor = \"#e3cced\", "
+                                  "color = \"#cfa6e0\", "
+                                  "rank = \"same\", fontcolor = black]\n");
 
             fprintf(dot_file_ptr, "head_node -> %s [color = \"#cfa6e0\"];\n", curr_node);
-
 
          }
 
          else if (i == list_struct->prev[0]) {
-            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
-
             fprintf(dot_file_ptr, "tail_node [shape = \"Mrecord\", label = \"TAIL"
-                                  "\", style = \"filled\", fillcolor = \"#e3cced\", color = \"#cfa6e0\", "
+                                  "\", style = \"filled\", fillcolor = \"#e3cced\", "
+                                  "color = \"#cfa6e0\", "
                                   "rank = \"same\", fontcolor = black]\n");
 
             fprintf(dot_file_ptr, "tail_node -> %s [color = \"#cfa6e0\"];\n", curr_node);
 
-
          }
-
-         else if (list_struct->prev[i] == FREE_PREV_ELEMENT_POS) {
-            snprintf(curr_node_args.label, 100, "data = %d [POISON] | index =  %d | { next = %d | prev = %d }",
-                                                list_struct->data[i], i, list_struct->next[i], list_struct->prev[i]);
-            curr_node_args.fill_color = "CCFF99";
-            curr_node_args.color = "66CC00";
-
-            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
-
-        }
-
-         else
-            DrawCurrNode(dot_file_ptr, &curr_node_args, curr_node);
-
     }
+    // todo: DTOR
 }
+
+//-----------------------------------------------------------------------------
 
 void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name) {
 
@@ -417,31 +474,26 @@ void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *n
 
 //=============================================================================
 
-void GetNodeName(int node_num, char *node) {
+char *GetNodeName(int node_num) {
 
+    char *node = (char *) calloc(MAX_DOT_NAME_SIZE, sizeof(char));
     if (node == NULL)
-        return;
+        return node;
 
     snprintf(node, MAX_DOT_NAME_SIZE, "node_%d", node_num);
-    //node[5] = 'a' + node_num;
 
+    return node;
 }
 
-void ChangeDotFileName(int file_num, char *file_name) {
-
-    if (file_name == NULL)
-        return;
-
-    file_name[10] = 'a' + file_num;
-}
+//-----------------------------------------------------------------------------
 
 char *CreateDotFileName(const char *file_type) {
 
     static int dot_file_number = 0;
 
-    char *file_name = (char *) calloc(MAX_DOt_FILE_NAME_SIZE, sizeof(char));
+    char *file_name = (char *) calloc(MAX_DOT_FILE_NAME_SIZE, sizeof(char));
 
-    snprintf(file_name, MAX_DOt_FILE_NAME_SIZE, "DotFileNum_%d.%s", dot_file_number, file_type);
+    snprintf(file_name, MAX_DOT_FILE_NAME_SIZE, "DotFileNum_%d.%s", dot_file_number, file_type);
 
     dot_file_number++;
 

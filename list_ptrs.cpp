@@ -14,6 +14,12 @@ FILE *LOGFILE = OpenLogFile();
 #define DEFAULT_DOT_TXT_FILE_NAME "DotFileNuma.txt"
 #define DEFAULT_DOT_PNG_FILE_NAME "DotFileNuma.png"
 
+const int MAX_DOT_NAME_SIZE      = 100;
+const int MAX_DOT_FILE_NAME_SIZE = 100;
+const int MAX_LABEL_STRING_SIZE  = 100;
+const int MAX_DOT_COMMAND_SIZE   = 100;
+
+
 //=============================================================================
 
 FILE* OpenLogFile() {
@@ -180,11 +186,9 @@ int ListVerify(list_t *list_struct) {
 void ListDump(list_t *list_struct, const char *file_name, const char *function_name,
               int line_number, const char *calling_reason_string) {
 
-    static int dot_files_counter = 0;
-
     ListDumpPrintErrors(list_struct, file_name, function_name, line_number, calling_reason_string);
 
-    CreateDumpGraphFile(list_struct, &dot_files_counter);
+    CreateDumpGraphFile(list_struct);
 }
 
 //=============================================================================
@@ -206,18 +210,23 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
 
     fprintf(SEREGA, "List structure [%p]\n", list_struct);
 
+    fprintf(SEREGA, "\n----------DATA---------\n");
+    for (ListNode_t *i = list_struct->head; i != NULL; i = i->next)
+        fprintf(SEREGA, "[%d] ", i->data);
+    fprintf(SEREGA, "\n-----------------------\n\n");
+
     if (error & HEAD_LIST_ERROR)
-        fprintf(SEREGA, "ERROR: head position error. Position is [%p]\n\n", list_struct->head);
+        fprintf(SEREGA, "\nERROR: head position error. Position is [%p]\n\n", list_struct->head);
     else
         fprintf(SEREGA, "Head position is %p\n", list_struct->head);
 
     if (error & TAIL_LIST_ERROR)
-        fprintf(SEREGA, "ERROR: tail position error. Position is [%p]\n\n", list_struct->tail);
+        fprintf(SEREGA, "\nERROR: tail position error. Position is [%p]\n\n", list_struct->tail);
     else
         fprintf(SEREGA, "Tail position is %p\n\n", list_struct->tail);
 
      if (error & PREV_NEXT_ERROR)
-        fprintf(SEREGA, "ERROR: next and prev arrays are different \n");
+        fprintf(SEREGA, "\nERROR: next and prev arrays are different \n");
 
 
     fprintf(SEREGA, "</pre>\n");
@@ -226,17 +235,15 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
 
 //=============================================================================
 
-void CreateDumpGraphFile(list_t *list_struct, int *dot_files_counter) {
+void CreateDumpGraphFile(list_t *list_struct) {
 
-    if (list_struct == NULL || dot_files_counter == NULL)
+    if (list_struct == NULL)
         return;
 
-    char DotFileName[] = DEFAULT_DOT_TXT_FILE_NAME;
-    char DotFilePngName[] = DEFAULT_DOT_PNG_FILE_NAME;
-
-    ChangeDotFileName(*dot_files_counter, DotFilePngName);
-    ChangeDotFileName(*dot_files_counter, DotFileName);
-    (*dot_files_counter)++;
+    char *DotFileName = CreateDotFileName("txt");
+    char *DotFilePngName = CreateDotFileName("png");
+    if (DotFileName == NULL || DotFilePngName == NULL)
+        return;
 
     FILE *dot_file_ptr = fopen(DotFileName, "w");
 
@@ -266,8 +273,6 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
     if (list_struct == NULL || dot_file_ptr == NULL)
         return;
 
-    char curr_node[] = DEFAULT_NODE_NAME;
-
     node_args_t curr_node_args = {};
     curr_node_args.label = (char *) calloc(100, sizeof(100));
     if (curr_node_args.label == NULL)
@@ -276,7 +281,10 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
     int counter = 0;
 
     for (ListNode_t *curr_ptr = list_struct->head; curr_ptr != NULL; curr_ptr = curr_ptr->next) {
-         ChangeNodeName(counter, curr_node);
+         char *curr_node = GetNodeName(counter);
+
+         if (curr_node == NULL)
+            return;
          curr_node_args.rank_num = counter;
 
          curr_node_args.fill_color = "99CCFF";
@@ -306,19 +314,26 @@ void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *n
 
 //=============================================================================
 
-void ChangeNodeName(int node_num, char *node) {
+char *GetNodeName(int node_num) {
 
-    if (node == NULL || strlen(node) <= 5)
-        return;
+    char *node = (char *) calloc(MAX_DOT_NAME_SIZE, sizeof(char));
+    if (node == NULL)
+        return node;
 
-    node[5] = 'a' + node_num;
+    snprintf(node, MAX_DOT_NAME_SIZE, "node_%d", node_num);
 
+    return node;
 }
 
-void ChangeDotFileName(int file_num, char *file_name) {
+char *CreateDotFileName(const char *file_type) {
 
-    if (file_name == NULL)
-        return;
+    static int dot_file_number = 0;
 
-    file_name[10] = 'a' + file_num;
+    char *file_name = (char *) calloc(MAX_DOT_FILE_NAME_SIZE, sizeof(char));
+
+    snprintf(file_name, MAX_DOT_FILE_NAME_SIZE, "DotFileNum_%d.%s", dot_file_number, file_type);
+
+    dot_file_number++;
+
+    return file_name;
 }
