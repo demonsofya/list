@@ -1,27 +1,59 @@
 #include <stdio.h>
 
-#include "list_ptrs.h"
-//#include "TXlib.h"
+#include "list.h"
 
 int main()
 {
-    list_t list_1 = ListOnPointersCtor(10);
+    list_t list_1 = ListCtor(10);
 
-    NewElementAfter(&list_1, list_1.head, 10);
-    NewElementAfter(&list_1, list_1.head, 20);
-    NewElementAfter(&list_1, list_1.head, 30);
+    InsertAfter(&list_1, 0, 10, 0);
+    InsertAfter(&list_1, 1, 20, 0);
+    InsertAfter(&list_1, 2, 30, 0);
 
-    NewElementAfter(&list_1, list_1.head, 30);
-
-    for (ListNode_t *i = list_1.head; i != NULL; i = i->next)
-        printf("[%d] ", i->data);
+    for (int i = 1; i != 0; i = list_1.next[i])
+        printf("[%d] ", list_1.data[i]);
     printf("\n\n");
-    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP BECAUSE OF DUMP");
 
-    list_1.tail = NULL;
-    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP BECAUSE OF TAIL");
+    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP BEFORE INSERT");
 
-    ListOnPointersDtor(&list_1);
+    InsertAfter(&list_1, 2, 40, 0);
+    InsertAfter(&list_1, 2, 50, 0);
+    InsertAfter(&list_1, 2, 60, 0);
+
+    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER INSERT");
+
+    DeleteElement(&list_1, 2, 0);
+    InsertAfter(&list_1, 3, 70, 0);
+    InsertBefore(&list_1, 1, 80, 0);
+    InsertAfter(&list_1, 3, 90, 0);
+    InsertBefore(&list_1, 1, 100, 0);
+    InsertAfter(&list_1, 3, 110, 0);
+    InsertBefore(&list_1, 1, 120, 0);
+    InsertAfter(&list_1, 3, 130, 0);
+    InsertBefore(&list_1, 1, 140, 0);
+
+    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER DELETE");
+
+    SortList(&list_1);
+
+    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER SORT");
+
+    list_1.next[1] = 222;
+    list_1.prev[3] = 6;
+    InsertAfter(&list_1, 3, 70, 0);
+    InsertBefore(&list_1, 1, 80, 0);
+    InsertAfter(&list_1, 3, 90, 0);
+    InsertBefore(&list_1, 1, 100, 0);
+    InsertAfter(&list_1, 3, 110, 0);
+    InsertBefore(&list_1, 1, 120, 0);
+    InsertAfter(&list_1, 3, 130, 0);
+    InsertBefore(&list_1, 1, 140, 0);
+
+    ListDump(&list_1, __FILE__, __FUNCTION__, __LINE__, "DUMP AFTER INSERT AFTER TAIL AND BEFORE HEAD");
+
+    //for (int i = GetHeadPosition(&list_1); i != 0; i = list_1.next[i])
+    //    printf("[%d] ", list_1.data[i]);
+    //printf("\n\n");
 
     return 0;
 }

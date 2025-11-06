@@ -5,6 +5,8 @@
 
 #include "list.h"
 
+//#include "TXlib.h"
+
 //-----------------------------------------------------------------------------
 
 list_t ListCtor(int data_size) {
@@ -15,20 +17,13 @@ list_t ListCtor(int data_size) {
     list_struct.next = (int *) calloc(sizeof(int), data_size);
     list_struct.prev = (int *) calloc(sizeof(int), data_size);
 
-    // TODO: func
     list_struct.free = 1;
+    list_struct.list_size = data_size;
 
-    for (int i = list_struct.free; i < data_size; i++) {
-        list_struct.next[i] = i + 1;
-        list_struct.prev[i] = FREE_PREV_ELEMENT_POS;
-        list_struct.data[i] = POISON;
-    }
+    FillListArrays(&list_struct);
 
     list_struct.data[DUMMY_ELEMENT_POS] = CANARY; // TODO: DUMMY_ELEMENT_POS
 
-    list_struct.next[data_size - 1] = 0;
-
-    list_struct.list_size = data_size;
 
     return list_struct;
 }
@@ -45,6 +40,19 @@ void ListDtor(list_t *list_struct) {
     free(list_struct->data);
     free(list_struct->next);
     free(list_struct->prev);
+}
+
+void FillListArrays(list_t *list_struct) {
+
+    assert(list_struct);
+
+    for (int i = list_struct->free; i < list_struct->list_size; i++) {
+        list_struct->next[i] = i + 1;
+        list_struct->prev[i] = FREE_PREV_ELEMENT_POS;
+        list_struct->data[i] = POISON;
+    }
+
+    list_struct->next[list_struct->list_size - 1] = 0;
 }
 
 //=============================================================================
@@ -65,13 +73,7 @@ void ReallocList(list_t *list_struct, int new_size) {
     list_struct->free = list_struct->list_size;
     list_struct->list_size = new_size;
 
-    for (int i = list_struct->free; i < list_struct->list_size; i++) {
-        list_struct->next[i] = i + 1;
-        list_struct->prev[i] = FREE_PREV_ELEMENT_POS;
-        list_struct->data[i] = POISON;
-    }
-
-    list_struct->next[list_struct->list_size - 1] = 0;
+    FillListArrays(list_struct);
 }
 
 //=============================================================================
@@ -94,7 +96,7 @@ int GetHeadPosition(list_t *list_struct) {
 int GetTailPosition(list_t *list_struct) {
 
     assert(list_struct);
-//sddssd
+    assert(list_struct->prev);
 
     return list_struct->prev[DUMMY_ELEMENT_POS];
 }
@@ -102,7 +104,7 @@ int GetTailPosition(list_t *list_struct) {
 int GetNextPosition(list_t *list_struct, int curr_pos) {
 
     assert(list_struct);
-//dsdsds
+    assert(list_struct->next);
 
     return list_struct->next[curr_pos];
 }
@@ -110,7 +112,7 @@ int GetNextPosition(list_t *list_struct, int curr_pos) {
 int GetPrevPosition(list_t *list_struct, int curr_pos) {
 
     assert(list_struct);
-  //  dsds
+    assert(list_struct->prev);
 
     return list_struct->prev[curr_pos];
 }

@@ -17,17 +17,36 @@ FILE *LOGFILE = OpenLogFile();
 #define DEFAULT_DOT_TXT_FILE_NAME "DotFileNum_0.txt"
 #define DEFAULT_DOT_PNG_FILE_NAME "DotFileNum_0.png"
 
+const char DEFAULT_LOG_FILE_NAME[] = "ListLogFile.html";
+
 const int MAX_DOT_NAME_SIZE      = 100;
 const int MAX_DOT_FILE_NAME_SIZE = 100;
 const int MAX_LABEL_STRING_SIZE  = 100;
 const int MAX_DOT_COMMAND_SIZE   = 100;
+
+const char *DARK_RED_COLOR             = "990000";
+const char *PURPLE_BLUE_COLOR          = "6666FF";
+const char *LIGHT_PURPLE_PINK_COLOR    = "baacc7";
+const char *SOFT_PURPLE_COLOR          = "876f9e";
+const char *LIGHT_BLUE_COLOR           = "99CCFF";
+const char *DEEP_BLUE_COLOR            = "0066cc";
+const char *ERROR_RED_COLOR            = "CC0000";
+const char *LIGHT_PASTEL_RED_COLOR     = "FF6666";
+const char *HOLY_WIGHT_COLOR           = "f5f5dc";
+const char *GRASS_GREEN_COLOR          = "4C9900";
+const char *LAVANDER_BLUE_COLOR        = "ccccff";
+const char *COBALITE_COLOR             = "9999ff";
+const char *LIGHT_YELLOW_GREEN_COLOR   = "CCFF99";
+const char *PASTEL_PURPLE_PINK_COLOR   = "cfa6e0";
+const char *LIGHT_GRAY_PURPLE_COLOR    = "e3cced";
+const char *BRIGHT_GREEN_COLOR         = "66CC00";
 
 //=============================================================================
 
 
 FILE* OpenLogFile() {
 
-    FILE *file_ptr = fopen("ListLogFile.html", "w"); // TODO: ¬€Õ≈—»  ¿   ŒÕ—“¿Õ“” ¡Àﬂ“‹
+    FILE *file_ptr = fopen(DEFAULT_LOG_FILE_NAME, "w");
     atexit(CloseLogFile);
 
     return file_ptr;
@@ -116,9 +135,9 @@ void ListDumpPrintErrors(list_t *list_struct, const char *file_name, const char 
 
     int error = ListVerify(list_struct);
 
-    fprintf(SEREGA, "<h2><font color=\"#CC0000\"><p align=\"center\">===========DUMP==========="
+    fprintf(SEREGA, "<h2><font color=\"#%s\"><p align=\"center\">===========DUMP==========="
                     "</p></font></h2>\n<h3><p align=\"center\">%s</p></h3>\n\n",
-                    calling_reason_string);
+                    ERROR_RED_COLOR, calling_reason_string);
 
     fprintf(SEREGA, "<h4>ListDump() from %s at %s:%d:</h4>\n<pre>", file_name, function_name,
                                                                     line_number);
@@ -214,13 +233,18 @@ void CreateDumpGraphFile(list_t *list_struct) {
     char *DotFileName = CreateDotFileName("txt");
     char *DotFilePngName = CreateDotFileName("png");
 
-    if (DotFileName == NULL || DotFilePngName == NULL)
+    if (DotFileName == NULL || DotFilePngName == NULL) {
+        fprintf(SEREGA, "ERROR: pointer dot file name error\n\n");
         return;    // TODO: ’”À» Õ≈ –¿¡Œ“¿≈“ Õ»’”ﬂ???
+    }
+
 
     FILE *dot_file_ptr = fopen(DotFileName, "w");
 
-    if (dot_file_ptr == NULL)
+    if (dot_file_ptr == NULL) {
+        fprintf(SEREGA, "ERROR: dot file pointer error\n\n");
         return;
+    }
 
     PrintDotFileHeader(dot_file_ptr, DotFilePngName);
     DrawDotNodes(list_struct, dot_file_ptr);
@@ -236,16 +260,14 @@ void CreateDumpGraphFile(list_t *list_struct) {
 
 void PrintDotFileHeader(FILE *dot_file_ptr, char *DotFilePngName) {
 
-    // TODO::::::::: ASSERT
-
-    if (dot_file_ptr == NULL || DotFilePngName == NULL)
-        return;
+    assert(dot_file_ptr);
+    assert(DotFilePngName);
 
     fprintf(SEREGA, "<img src=\"%s\" />\n", DotFilePngName);
 
     fprintf(dot_file_ptr, "digraph {\nrankdir=\"LR\";\n");
-    fprintf(dot_file_ptr, "node [shape = \"doubleoctagon\", style = \"filled\", fillcolor = \"#FF6666\""
-                          ", color = \"#CC0000\", fontcolor = white, fontsize=20, margin=0.1];\n");
+    fprintf(dot_file_ptr, "node [shape = \"doubleoctagon\", style = \"filled\", fillcolor = \"#%s\""
+                          ", color = \"#%s\", fontcolor = white, fontsize=20, margin=0.1];\n", LIGHT_PASTEL_RED_COLOR, ERROR_RED_COLOR);
 }
 
 //-----------------------------------------------------------------------------
@@ -282,7 +304,7 @@ void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr) {
 
     char *curr_node = NULL;
 
-    fprintf(dot_file_ptr, "{\n edge [color = \"#f5f5dc\", dir=none];\n");
+    fprintf(dot_file_ptr, "{\n edge [color = \"#%s\", dir=none];\n", HOLY_WIGHT_COLOR);
     for (int i = 0; i < list_struct->list_size - 1; i++) {
         curr_node = GetNodeName(i);
         fprintf(dot_file_ptr, "\"%s\" -> ", curr_node);
@@ -291,7 +313,7 @@ void DrawDotEdges(list_t *list_struct, FILE *dot_file_ptr) {
     curr_node = GetNodeName(list_struct->list_size - 1);
     fprintf(dot_file_ptr, "\"%s\" [weight = 1000000];\n}\n", curr_node);
 
-    fprintf(dot_file_ptr, "{\n edge [color = \"#4C9900\"];\n");
+    fprintf(dot_file_ptr, "{\n edge [color = \"#%s\"];\n", GRASS_GREEN_COLOR);
     for (int i = list_struct->free; i > 0 && i < list_struct->list_size; i = list_struct->next[i]) {
         curr_node = GetNodeName(i);
 
@@ -324,7 +346,7 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
         if (list_struct->next[i] < 0 || list_struct->next[i] >= list_struct->list_size) {
             char curr_pos[MAX_DOT_NAME_SIZE] = "";
             snprintf(curr_pos, MAX_DOT_NAME_SIZE, "%d", next_pos);
-            DrawCurrEdge(dot_file_ptr, curr_node, curr_pos, "CC0000", 4, "forward");
+            DrawCurrEdge(dot_file_ptr, curr_node, curr_pos, ERROR_RED_COLOR, 4, "forward");
 
             continue;
         }
@@ -335,12 +357,12 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr) {
             return;
 
         if (prev_pos == i && i != 0 && next_pos != 0)
-            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "6666FF", 1, "both");
+            DrawCurrEdge(dot_file_ptr, curr_node, next_node, PURPLE_BLUE_COLOR, 1, "both");
 
         else if (prev_pos >= 0 && prev_pos < list_struct->list_size && next_pos > 0
                                && next_pos < list_struct->list_size) {
-            DrawCurrEdge(dot_file_ptr, next_node, prev_node, "990000", 2, "forward");
-            DrawCurrEdge(dot_file_ptr, curr_node, next_node, "990000", 2, "forward");      // TODO: ÷¬≈“ ’”… «Õ¿≈“  ¿ Œ…
+            DrawCurrEdge(dot_file_ptr, next_node, prev_node, DARK_RED_COLOR, 2, "forward");
+            DrawCurrEdge(dot_file_ptr, curr_node, next_node, DARK_RED_COLOR, 2, "forward");      // TODO: ÷¬≈“ ’”… «Õ¿≈“  ¿ Œ…
 
         }
     }
@@ -371,14 +393,32 @@ node_args_t *NodeArgsCtor(const char *fill_color, const char *color, int rank_nu
     if (curr_node_args == NULL)
         return NULL;
 
-    curr_node_args->fill_color = fill_color;
-    curr_node_args->color = color;
-    curr_node_args->rank_num = rank_num;
+    SetNodeProperties(curr_node_args, fill_color, color, rank_num);
 
     curr_node_args->label = (char *) calloc(MAX_LABEL_STRING_SIZE, sizeof(char));
 
     return curr_node_args;
-};
+}
+
+void SetNodeProperties(node_args_t *curr_node_args, const char *fill_color, const char *color, int rank_num) {
+
+    assert(curr_node_args);
+    assert(fill_color);
+    assert(color);
+
+    curr_node_args->fill_color = fill_color;
+    curr_node_args->color = color;
+    curr_node_args->rank_num = rank_num;
+}
+
+void NodeArgsDtor(node_args_t *curr_node_args) {
+
+    if (curr_node_args == NULL)
+        return;
+
+    free(curr_node_args->label);
+    free(curr_node_args);
+}
 
 //-----------------------------------------------------------------------------
 
@@ -389,20 +429,21 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
 
     char *curr_node = GetNodeName(0);
 
-    node_args_t *curr_node_args = NodeArgsCtor("baacc7", "876f9e", 0);
+    node_args_t *curr_node_args = NodeArgsCtor(LIGHT_PURPLE_PINK_COLOR, SOFT_PURPLE_COLOR, 0);
     if (curr_node_args == NULL)
         return;
-
+    // ‚˚ÌÂÒÚË ÒÓÁ‰‡ÌËÂ ÌÛÎÂ‚Ó„Ó ÌÓ‰‡ ‚ ÙÛÌÍˆË˛˚
     snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE, "data = %d | index = %d"
                                                           "| { HEAD = %d | TAIL = %d }",
-                                   list_struct->data[0], 0, list_struct->next[0], list_struct->prev[0]); // TODO: const
+                                   list_struct->data[0], 0,
+                                   list_struct->next[DUMMY_ELEMENT_POS], list_struct->prev[DUMMY_ELEMENT_POS]); // TODO: const
 
     DrawCurrNode(dot_file_ptr, curr_node_args, curr_node);
 
     for (int i = 1; i < list_struct->list_size; i++) {
          curr_node = GetNodeName(i);
 
-         curr_node_args = NodeArgsCtor("99CCFF", "0066CC", i); // TODO: SetNodeProperties
+         SetNodeProperties(curr_node_args, LIGHT_BLUE_COLOR, DEEP_BLUE_COLOR, i); // TODO: SetNodeProperties
 
          snprintf(curr_node_args->label, MAX_LABEL_STRING_SIZE,
                                         "data = %d | index =  %d | { next = %d | prev = %d }",
@@ -415,8 +456,8 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
                                            list_struct->data[i], i, list_struct->next[i],
                                            list_struct->prev[i]);
 
-            curr_node_args->fill_color = "ccccff";
-            curr_node_args->color = "9999ff";
+            curr_node_args->fill_color = LAVANDER_BLUE_COLOR;
+            curr_node_args->color = COBALITE_COLOR;
 
          }
 
@@ -427,34 +468,39 @@ void DrawDotNodes(list_t *list_struct, FILE *dot_file_ptr) {
                                            list_struct->data[i], i, list_struct->next[i],
                                            list_struct->prev[i]);
 
-            curr_node_args->fill_color = "CCFF99";
-            curr_node_args->color = "66CC00";
+            curr_node_args->fill_color = LIGHT_YELLOW_GREEN_COLOR;
+            curr_node_args->color = BRIGHT_GREEN_COLOR;
 
         }
 
         DrawCurrNode(dot_file_ptr, curr_node_args, curr_node);
-
-         if (i == list_struct->next[0]) {
-            fprintf(dot_file_ptr, "head_node [shape = \"Mrecord\", label = \"HEAD"
-                                  "\", style = \"filled\", fillcolor = \"#e3cced\", "
-                                  "color = \"#cfa6e0\", "
-                                  "rank = \"same\", fontcolor = black]\n");
-
-            fprintf(dot_file_ptr, "head_node -> %s [color = \"#cfa6e0\"];\n", curr_node);
-
-         }
-
-         else if (i == list_struct->prev[0]) {
-            fprintf(dot_file_ptr, "tail_node [shape = \"Mrecord\", label = \"TAIL"
-                                  "\", style = \"filled\", fillcolor = \"#e3cced\", "
-                                  "color = \"#cfa6e0\", "
-                                  "rank = \"same\", fontcolor = black]\n");
-
-            fprintf(dot_file_ptr, "tail_node -> %s [color = \"#cfa6e0\"];\n", curr_node);
-
-         }
     }
-    // todo: DTOR
+
+    DrawHeadAndTail(list_struct, dot_file_ptr);
+
+    NodeArgsDtor(curr_node_args);
+}
+
+void DrawHeadAndTail(list_t *list_struct, FILE *dot_file_ptr) {
+
+    if (list_struct == NULL || dot_file_ptr == NULL)
+        return;
+
+    char *head_node = GetNodeName(list_struct->next[0]);
+    fprintf(dot_file_ptr, "head_node [shape = \"Mrecord\", label = \"HEAD"
+                          "\", style = \"filled\", fillcolor = \"#%s\", color = \"#%s\", "
+                          "rank = \"same\", fontcolor = black]\n", LIGHT_GRAY_PURPLE_COLOR, PASTEL_PURPLE_PINK_COLOR);
+
+    fprintf(dot_file_ptr, "head_node -> %s [color = \"#%s\"];\n", head_node, PASTEL_PURPLE_PINK_COLOR);
+
+
+    char *tail_node = GetNodeName(list_struct->prev[0]);
+    fprintf(dot_file_ptr, "tail_node [shape = \"Mrecord\", label = \"TAIL"
+                          "\", style = \"filled\", fillcolor = \"#%s\", "
+                          "color = \"#%s\", rank = \"same\", fontcolor = black]\n",
+                          LIGHT_GRAY_PURPLE_COLOR, PASTEL_PURPLE_PINK_COLOR);
+
+    fprintf(dot_file_ptr, "tail_node -> %s [color = \"#%s\"];\n", tail_node, PASTEL_PURPLE_PINK_COLOR);
 }
 
 //-----------------------------------------------------------------------------

@@ -12,6 +12,15 @@
         }                                                                                   \
     }
 
+#define Return_Zero_If_Error(list)                                                          \
+    {                                                                                       \
+        int error = ListVerify(list);                                                       \
+        if (error != NO_LIST_ERROR) {                                                       \
+            ListDump(list, __FILE__, __FUNCTION__, __LINE__, "FUNCTION ERROR");             \
+            return 0;                                                                         \
+        }                                                                                   \
+    }
+
 #define Return_Error(list)                                                                  \
     {                                                                                       \
         int error = ListVerify(list);                                                       \
@@ -84,6 +93,8 @@ void CloseLogFile();
 
 list_t ListCtor(int data_size);
 void ListDtor(list_t *list_struct);
+void FillListArrays(list_t *list_struct);
+void ReallocList(list_t *list_struct, int new_size);
 
 int CheckParamPosition(list_t *list_struct, int pos);
 
@@ -113,6 +124,9 @@ char *GetNodeName(int node_num);
 void ChangeDotFileName(int file_num, char *file_name);
 
 node_args_t *NodeArgsCtor(const char *fill_color, const char *color, int rank_num);
+void NodeArgsDtor(node_args_t *curr_node_args);
+void SetNodeProperties(node_args_t *curr_node_args, const char *fill_color,
+                       const char *color, int rank_num);
 
 void PrintDotFileHeader(FILE *dot_file_ptr, char *DotFilePngName);
 void PrintDotFileEnd(FILE *dot_file_ptr);
@@ -124,6 +138,7 @@ void DrawBothDirEdges(list_t *list_struct, FILE *dot_file_ptr);
 void DrawCurrEdge(FILE *dot_file_ptr, const char* first_node, const char *second_node,
                   const char* color, int pen_width, const char *dir_type);
 void DrawCurrNode(FILE *dot_file_ptr, node_args_t *curr_node_args, const char *node_name);
+void DrawHeadAndTail(list_t *list_struct, FILE *dot_file_ptr);
 
 char *CreateDotFileName(const char *file_type);
 
